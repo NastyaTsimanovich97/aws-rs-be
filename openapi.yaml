@@ -1,5 +1,6 @@
 openapi: 3.0.0
-servers: []
+servers: 
+  - url: https://d8600njvu8.execute-api.eu-west-1.amazonaws.com/prod
 info:
   version: "1.0.0"
   title: Products API
