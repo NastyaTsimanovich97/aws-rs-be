@@ -7,7 +7,9 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "deploy": "cdk bootstrap --region=eu-west-1 && cdk deploy --region=eu-west-1 --require-approval=never"
+    "deploy": "cdk bootstrap --region=eu-west-1 && cdk deploy --region=eu-west-1 --require-approval=never",
+    "populate:products": "cd ./scripts && sh populate_products.sh",
+    "populate:stocks": "cd ./scripts && sh populate_stocks.sh"
   },
   "devDependencies": {
     "@aws-cdk/aws-cloudfront": "^1.204.0",
