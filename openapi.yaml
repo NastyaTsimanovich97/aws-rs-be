@@ -1,0 +1,93 @@
+openapi: 3.0.0
+servers: 
+  - url: https://d8600njvu8.execute-api.eu-west-1.amazonaws.com/prod
+info:
+  version: "1.0.0"
+  title: Products API
+  description: >-
+    This is the Products API where you can find Products.
+externalDocs:
+  description: Products API Git repository
+  url: https://gitlab.aws/lppopple/blog/cdk-openapi/products-api
+tags:
+  - name: product
+    description: Everything about Products
+    externalDocs:
+      description: Amazon Web Services
+      url: 'http://aws.amazon.com'
+paths:
+  /products:
+    get: 
+      tags:
+        - product
+      summary: Products List.
+      description: Get list of Products.
+      operationId: getProducts
+      responses:
+        '200':
+          $ref: '#/components/responses/Products'
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:900769118849:function:TsimanovichAWSRS-ProductsProductsListHandler54570D-cxL8sozsWsrP/invocations"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws"
+  /products/{productId}:
+    get:
+      tags:
+        - product
+      summary: Get product.
+      description: Get a product.
+      operationId: getProduct
+      parameters:
+        - $ref: '#/components/parameters/productId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Product'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:900769118849:function:TsimanovichAWSRS-ProductsProductHandler24E2E19B-OUoq3axA4SpF/invocations"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+
+components:
+  parameters:
+    productId:
+      in: path
+      name: productId
+      required: true
+      schema:
+        type: string
+  responses:
+    Products:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Product'
+    Product:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+      required:
+        - id
+        - title
+        - description
+        - price
+          
