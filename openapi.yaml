@@ -26,11 +26,16 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Products'
-      x-amazon-apigateway-integration:
-        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:900769118849:function:TsimanovichAWSRS-ProductsProductsListHandler54570D-cxL8sozsWsrP/invocations"
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws"
+    post: 
+      tags:
+        - product
+      summary: Product Create Product.
+      description: Create Product.
+      operationId: createProduct
+      responses:
+        '200':
+          $ref: '#/components/responses/Product'
+  
   /products/{productId}:
     get:
       tags:
@@ -43,12 +48,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Product'
-      x-amazon-apigateway-integration:
-        uri:
-          Fn::Sub: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:900769118849:function:TsimanovichAWSRS-ProductsProductHandler24E2E19B-OUoq3axA4SpF/invocations"
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws_proxy"
 
 components:
   parameters:
@@ -90,4 +89,5 @@ components:
         - title
         - description
         - price
+        - count
           
