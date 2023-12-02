@@ -1,6 +1,6 @@
-import { PRODUCTS } from '../../../constants/products';
+import { PRODUCTS } from '../../../../constants/products';
 
-import { buildResponseBody } from '../../../utils/buildResponseBody.util';
+import { buildResponseBody } from '../../../../utils/buildResponseBody.util';
 
 export const handler = async function(event: any) {
   try {

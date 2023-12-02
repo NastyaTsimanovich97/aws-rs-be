@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { ScanCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-import { buildResponseBody } from '../../../utils/buildResponseBody.util';
+import { buildResponseBody } from '../../../../utils/buildResponseBody.util';
 
 const client = new DynamoDBClient({ apiVersion: '2012-08-10' });
 const docClient = DynamoDBDocumentClient.from(client);

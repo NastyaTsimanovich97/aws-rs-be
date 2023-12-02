@@ -4,7 +4,7 @@ import { QueryCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 const client = new DynamoDBClient({ apiVersion: '2012-08-10' });
 const docClient = DynamoDBDocumentClient.from(client);
 
-import { buildResponseBody } from '../../../utils/buildResponseBody.util';
+import { buildResponseBody } from '../../../../utils/buildResponseBody.util';
 
 export const handler = async function(event: any) {
   console.log(`event: ${event}`);

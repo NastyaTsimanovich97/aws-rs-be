@@ -1,4 +1,4 @@
-import { handler } from '../../../resources/lambdas/product';
+import { handler } from '../../../services/product-service/lambdas/product';
 
 describe('product', () => {
   describe ('GET', () => {
