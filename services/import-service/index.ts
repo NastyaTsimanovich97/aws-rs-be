@@ -3,8 +3,8 @@ import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
+import * as s3n from '@aws-cdk/aws-s3-notifications';
 import * as path from 'path';
-import { JsonSchemaType } from '@aws-cdk/aws-apigateway';
 
 export class ImportService extends Construct {
   constructor(scope: Construct, id: string) {
@@ -31,10 +31,31 @@ export class ImportService extends Construct {
     });
 
     importProductsFileBucket.grantReadWrite(importProductsFileHandler);
-
     importBucket.grantReadWrite(importProductsFileHandler);
 
-    // Products API
+    // Import Products File
+    const importFileParserBucket = new s3.Bucket(this, 'ImportFileParser');
+
+    const importFileParserHandler = new NodejsFunction(this, 'importFileParserHandler', {
+      memorySize: 1024,
+      runtime: lambda.Runtime.NODEJS_16_X,
+      entry: path.join(__dirname, `./lambdas/importFileParser/index.ts`),
+      handler: 'handler',
+      environment: {
+        BUCKET: importFileParserBucket.bucketName,
+        UPLOAD_BUCKET: importBucket.bucketName,
+      }
+    });
+
+    importFileParserBucket.grantReadWrite(importFileParserHandler);
+    importBucket.grantReadWrite(importFileParserHandler);
+    importBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(importFileParserHandler),
+      { prefix: 'uploaded' }
+    );
+
+    // Imports API
     const api = new apigateway.RestApi(this, 'import-api', {
       restApiName: 'import',
       description: 'This service import files.',

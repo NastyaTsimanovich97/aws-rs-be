@@ -14,7 +14,7 @@ export const handler = async function(event: any) {
     // Get signed URL from S3
     const putObjectParams = {
       Bucket: process.env.UPLOAD_BUCKET,
-      Key: `uploaded/${name}.csv`,
+      Key: `uploaded/${name}`,
       ContentType: 'application/json',
     };
 
