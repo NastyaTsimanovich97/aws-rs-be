@@ -37,6 +37,8 @@ export const handler = async function(event: any) {
 
     const results = [];
 
+    console.log('parser', parser);
+
     for await (const item of parser) {
       console.log(`item ${JSON.stringify(item)}`);
       results.push(item.data);
@@ -58,6 +60,8 @@ export const handler = async function(event: any) {
 
     const deleteResponse = await client.send(deleteCommand);
     console.log('deleteResponse', deleteResponse);
+
+    return buildResponseBody(200, 'File are parsed and moved to /parsed folder');
   } catch(error: any) {
     const body = error.stack || JSON.stringify(error, null, 2);
 

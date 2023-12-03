@@ -1,8 +1,8 @@
-import { PRODUCTS } from '../../../constants/products';
+import { PRODUCTS } from '../../constants/products';
 
-import { handler } from '../../../services/product-service/lambdas/getProductsList';
+import { handler } from '../../services/product-service/lambdas/productsList';
 
-describe('getProductsList', () => {
+describe('productsList', () => {
   describe ('GET', () => {
     it('should return products', async () => {
       const event = {

@@ -1,6 +1,6 @@
-import { handler } from '../../../services/product-service/lambdas/product';
+import { handler } from '../../services/product-service/lambdas/getProductsById';
 
-describe('product', () => {
+describe('getProductsById', () => {
   describe ('GET', () => {
     it('should return product', async () => {
       const event = {
