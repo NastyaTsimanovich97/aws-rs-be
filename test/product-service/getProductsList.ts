@@ -1,6 +1,6 @@
-import { PRODUCTS } from '../../../constants/products';
+import { PRODUCTS } from '../../constants/products';
 
-import { handler } from '../../../resources/lambdas/getProductsList';
+import { handler } from '../../services/product-service/lambdas/getProductsList';
 
 describe('getProductsList', () => {
   describe ('GET', () => {

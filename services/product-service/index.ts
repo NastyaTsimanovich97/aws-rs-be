@@ -21,7 +21,7 @@ export class ProductsService extends Construct {
     const getProductsListHandler = new NodejsFunction(this, 'getProductsListHandler', {
       memorySize: 1024,
       runtime: lambda.Runtime.NODEJS_16_X,
-      entry: path.join(__dirname, `../../resources/lambdas/getProductsList/index.ts`),
+      entry: path.join(__dirname, `./lambdas/getProductsList/index.ts`),
       handler: 'handler',
       environment: {
         BUCKET: listBucket.bucketName,
@@ -40,7 +40,7 @@ export class ProductsService extends Construct {
     const getProductsByIdHandler = new NodejsFunction(this, 'getProductsByIdHandler', {
       memorySize: 1024,
       runtime: lambda.Runtime.NODEJS_16_X,
-      entry: path.join(__dirname, `../../resources/lambdas/getProductsById/index.ts`),
+      entry: path.join(__dirname, `./lambdas/getProductsById/index.ts`),
       handler: 'handler',
       environment: {
         BUCKET: productBucket.bucketName,
@@ -59,7 +59,7 @@ export class ProductsService extends Construct {
     const createProductHandler = new NodejsFunction(this, 'createProductHandler', {
       memorySize: 1024,
       runtime: lambda.Runtime.NODEJS_16_X,
-      entry: path.join(__dirname, `../../resources/lambdas/createProduct/index.ts`),
+      entry: path.join(__dirname, `./lambdas/createProduct/index.ts`),
       handler: 'handler',
       environment: {
         BUCKET: productCreateBucket.bucketName,
