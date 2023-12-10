@@ -1,9 +1,15 @@
-import { parse } from 'csv-parse';
+import { v4 as uuid } from 'uuid';
 import { Readable } from 'node:stream';
+
 import { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
+import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
+
 import { buildResponseBody } from '../../../../utils/buildResponseBody.util';
+import { parseProducts } from '../../utils/parseProducts';
+
 const client = new S3Client();
+const sqsClient = new SQSClient();
 
 export const handler = async function(event: any) {
   console.log(`event:`, event);
@@ -22,27 +28,20 @@ export const handler = async function(event: any) {
 
     const { Body: s3File } = await client.send(getCommand);
 
-    const parser = (s3File as Readable)?.pipe(
-      parse({
-        delimiter: ',',
-        columns: false,
-        cast: (value: string, context) => {
-          console.log('context', context);
-          console.log('value', value);
+    const results = await parseProducts(s3File as Readable);
 
-          return value;
-        },
-      }),
-    );
+    const sqsInput = {
+      Entries: results.map((item) => ({
+        Id: uuid(),
+        MessageBody: JSON.stringify(item),
+      })),
+      QueueUrl: process.env.CATALOG_QUEUE
+    };
 
-    const results = [];
+    const sqsCommand = new SendMessageBatchCommand(sqsInput);
 
-    console.log('parser', parser);
-
-    for await (const item of parser) {
-      console.log(`item ${JSON.stringify(item)}`);
-      results.push(item.data);
-    }
+    const sqsResponse = await sqsClient.send(sqsCommand);
+    console.log('sqsResponse', sqsResponse);
 
     const copyCommand = new CopyObjectCommand({
       CopySource: `${process.env.UPLOAD_BUCKET}/${fileName}`,

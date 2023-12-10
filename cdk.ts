@@ -10,8 +10,21 @@ class AwsHostingStack extends cdk.Stack { // stack it is cloud formation
     super(parent, name);
 
     new AwsHosting(this, 'TsimanovichAWSRS');
+  }
+}
+
+class ProductStack extends cdk.Stack { // stack it is cloud formation
+  constructor(parent: cdk.App, name: string) {
+    super(parent, name);
 
     new ProductsService(this, 'Products');
+  }
+}
+
+class ImportStack extends cdk.Stack {
+  constructor(parent: cdk.App, name: string) {
+    super(parent, name);
+
     new ImportService(this, 'Import');
   }
 }
@@ -19,6 +32,8 @@ class AwsHostingStack extends cdk.Stack { // stack it is cloud formation
 const app = new cdk.App();
 
 new AwsHostingStack(app, 'TsimanovichAWSRS');
+new ProductStack(app, 'TsimanovichAWSRSProduct');
+new ImportStack(app, 'TsimanovichAWSRSImport');
 
 app.synth();
 

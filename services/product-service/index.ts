@@ -3,9 +3,13 @@ import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as sqs from '@aws-cdk/aws-sqs';
+import * as sns from '@aws-cdk/aws-sns';
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
+import * as lambdaEventSources from '@aws-cdk/aws-lambda-event-sources';
 import * as path from 'path';
 import { JsonSchemaType } from '@aws-cdk/aws-apigateway';
+import { Effect, PolicyStatement } from '@aws-cdk/aws-iam';
 
 export class ProductsService extends Construct {
   constructor(scope: Construct, id: string) {
@@ -15,27 +19,19 @@ export class ProductsService extends Construct {
 
     const stocksTable = dynamodb.Table.fromTableArn(this, 'tsimanovich-stocks', 'arn:aws:dynamodb:eu-west-1:900769118849:table/tsimanovich-stocks');
 
-    // Products List
-    const listBucket = new s3.Bucket(this, 'ProductsList');
-
     const getProductsListHandler = new NodejsFunction(this, 'getProductsListHandler', {
       memorySize: 1024,
       runtime: lambda.Runtime.NODEJS_16_X,
       entry: path.join(__dirname, `./lambdas/getProductsList/index.ts`),
       handler: 'handler',
       environment: {
-        BUCKET: listBucket.bucketName,
         PRODUCTS_TABLE: productsTable.tableName,
         STOCKS_TABLE: stocksTable.tableName,
       }
     });
 
-    listBucket.grantReadWrite(getProductsListHandler);
     productsTable.grantReadData(getProductsListHandler);
     stocksTable.grantReadData(getProductsListHandler);
-
-    // Product Get By Id
-    const productBucket = new s3.Bucket(this, 'Product');
 
     const getProductsByIdHandler = new NodejsFunction(this, 'getProductsByIdHandler', {
       memorySize: 1024,
@@ -43,13 +39,11 @@ export class ProductsService extends Construct {
       entry: path.join(__dirname, `./lambdas/getProductsById/index.ts`),
       handler: 'handler',
       environment: {
-        BUCKET: productBucket.bucketName,
         PRODUCTS_TABLE: productsTable.tableName,
         STOCKS_TABLE: stocksTable.tableName,
       }
     });
 
-    productBucket.grantReadWrite(getProductsByIdHandler);
     productsTable.grantReadData(getProductsByIdHandler);
     stocksTable.grantReadData(getProductsByIdHandler);
 
@@ -71,6 +65,51 @@ export class ProductsService extends Construct {
     productCreateBucket.grantReadWrite(createProductHandler);
     productsTable.grantReadWriteData(createProductHandler);
     stocksTable.grantReadWriteData(createProductHandler);
+
+    // SQS catalogItemsQueue
+    const catalogQueue = new sqs.Queue(this, 'catalogItemsQueue', {
+      queueName: 'catalogItemsQueue',
+    });
+
+    // SNS createProductTopic
+    const createProductTopic = new sns.Topic(this, 'createProductTopic', {
+      displayName: 'createProductTopic',
+    });
+
+    new sns.Subscription(this, 'createProductTopicSubscription', {
+      endpoint: 'nastya.cimanovich.97@gmail.com',
+      protocol: sns.SubscriptionProtocol.EMAIL,
+      topic: createProductTopic,
+    });
+
+    const catalogBatchProcessHandler = new NodejsFunction(this, 'catalogBatchProcessHandler', {
+      memorySize: 1024,
+      runtime: lambda.Runtime.NODEJS_16_X,
+      entry: path.join(__dirname, `./lambdas/catalogBatchProcess/index.ts`),
+      handler: 'handler',
+      environment: {
+        PRODUCTS_TABLE: productsTable.tableName,
+        STOCKS_TABLE: stocksTable.tableName,
+        CREATE_PRODUCT_TOPIC: createProductTopic.topicArn,
+      }
+    });
+
+    productsTable.grantReadWriteData(catalogBatchProcessHandler);
+    stocksTable.grantReadWriteData(catalogBatchProcessHandler);
+
+    const eventSource = new lambdaEventSources.SqsEventSource(catalogQueue, {
+      batchSize: 5,
+    });
+
+    catalogBatchProcessHandler.addEventSource(eventSource);
+
+    catalogBatchProcessHandler.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["sns:Publish"],
+        resources: [createProductTopic.topicArn],
+        effect: Effect.ALLOW,
+      }),
+    );
 
     // Products API
     const api = new apigateway.RestApi(this, 'products-api', {
