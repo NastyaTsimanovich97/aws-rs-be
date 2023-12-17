@@ -21,6 +21,23 @@ jest.mock('@aws-sdk/client-s3', () => {
   };
 });
 
+jest.mock('@aws-sdk/client-sqs', () => {
+  return {
+    SQSClient: jest.fn().mockImplementation(() => {
+      return {
+        send: jest
+          .fn()
+          .mockImplementationOnce(() => Promise.resolve({
+            Body: {
+              pipe: jest.fn().mockImplementationOnce(() => [])
+            }
+          }))
+      };
+    }),
+    SendMessageBatchCommand: class {},
+  };
+});
+
 jest.mock('csv-parse', () => {
   return {
     parse: jest.fn().mockImplementation(() => []),

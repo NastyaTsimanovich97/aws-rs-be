@@ -4,6 +4,8 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
 import * as s3n from '@aws-cdk/aws-s3-notifications';
+import * as sqs from '@aws-cdk/aws-sqs';
+import * as iam from '@aws-cdk/aws-iam';
 import * as path from 'path';
 
 export class ImportService extends Construct {
@@ -16,8 +18,11 @@ export class ImportService extends Construct {
       'tsimanovich-import',
     );
 
-    // Import Products File
-    const importProductsFileBucket = new s3.Bucket(this, 'ImportProductsFile');
+    const catalogQueue = sqs.Queue.fromQueueArn(
+      this, 
+      'catalogItemsQueue', 
+      'arn:aws:sqs:eu-west-1:900769118849:catalogItemsQueue'
+    );
 
     const importProductsFileHandler = new NodejsFunction(this, 'importProductsFileHandler', {
       memorySize: 1024,
@@ -25,16 +30,11 @@ export class ImportService extends Construct {
       entry: path.join(__dirname, `./lambdas/importProductsFile/index.ts`),
       handler: 'handler',
       environment: {
-        BUCKET: importProductsFileBucket.bucketName,
         UPLOAD_BUCKET: importBucket.bucketName,
       }
     });
 
-    importProductsFileBucket.grantReadWrite(importProductsFileHandler);
     importBucket.grantReadWrite(importProductsFileHandler);
-
-    // Import Products File
-    const importFileParserBucket = new s3.Bucket(this, 'ImportFileParser');
 
     const importFileParserHandler = new NodejsFunction(this, 'importFileParserHandler', {
       memorySize: 1024,
@@ -42,18 +42,23 @@ export class ImportService extends Construct {
       entry: path.join(__dirname, `./lambdas/importFileParser/index.ts`),
       handler: 'handler',
       environment: {
-        BUCKET: importFileParserBucket.bucketName,
         UPLOAD_BUCKET: importBucket.bucketName,
+        CATALOG_QUEUE: catalogQueue.queueUrl,
       }
     });
 
-    importFileParserBucket.grantReadWrite(importFileParserHandler);
     importBucket.grantReadWrite(importFileParserHandler);
     importBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       new s3n.LambdaDestination(importFileParserHandler),
       { prefix: 'uploaded' }
     );
+
+    importFileParserHandler.addToRolePolicy(new iam.PolicyStatement({
+     effect: iam.Effect.ALLOW,
+     resources: [catalogQueue.queueArn],
+     actions: ["*"],
+   }))
 
     // Imports API
     const api = new apigateway.RestApi(this, 'import-api', {
