@@ -55,17 +55,40 @@ export class ImportService extends Construct {
     );
 
     importFileParserHandler.addToRolePolicy(new iam.PolicyStatement({
-     effect: iam.Effect.ALLOW,
-     resources: [catalogQueue.queueArn],
-     actions: ["*"],
-   }))
+      effect: iam.Effect.ALLOW,
+      resources: [catalogQueue.queueArn],
+      actions: ['*'],
+    }));
+
+    // Auth
+    const basicAuthHandler = lambda.Function.fromFunctionArn(
+      this,
+      'basicAuthorizerHandler',
+      'arn:aws:lambda:eu-west-1:900769118849:function:TsimanovichAWSRSAuth-AuthbasicAuthorizerHandler358-HYB0dwfI5FUl',
+    );
+
+    const authRole = new iam.Role(this, 'authRole', {
+      assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'),
+    });
+
+    authRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['lambda:InvokeFunction'],
+        resources: [basicAuthHandler.functionArn],
+      }),
+    );
+
+    const tokenAuth = new apigateway.TokenAuthorizer(this, 'tokenAuth', {
+      handler: basicAuthHandler,
+      assumeRole: authRole,
+    });
 
     // Imports API
     const api = new apigateway.RestApi(this, 'import-api', {
       restApiName: 'import',
       description: 'This service import files.',
       defaultCorsPreflightOptions: {
-        allowHeaders: ['Content-Type'],
+        allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
       },
@@ -77,6 +100,22 @@ export class ImportService extends Construct {
       requestTemplates: { 'application/json': '{ "statusCode": "200" }' },
     });
 
-    importApi.addMethod('GET', importProductsFileIntegration);
+    importApi.addMethod('GET', importProductsFileIntegration, {
+      requestParameters: {
+        'method.request.header.Authorization': true,
+      },
+      authorizer: tokenAuth,
+    });
+
+    new apigateway.GatewayResponse(this, 'UnauthorizedResponse', {
+      restApi: api,
+      type: apigateway.ResponseType.UNAUTHORIZED,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Methods': "'*'",
+        'Access-Control-Allow-Headers': "'*'",
+      },
+      statusCode: '401',
+    });
   }
 }

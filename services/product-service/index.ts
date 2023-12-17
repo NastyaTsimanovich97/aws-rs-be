@@ -116,7 +116,7 @@ export class ProductsService extends Construct {
       restApiName: 'products',
       description: 'This service return products.',
       defaultCorsPreflightOptions: {
-        allowHeaders: ['Content-Type'],
+        allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
       },
